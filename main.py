@@ -100,6 +100,7 @@ def obstructed(board, fro, to):
     for i in xrange(sign(dy) * 1, dy, sign(dy)):
         if board[fro[0] + i * diag, fro[1] + i, 0] != 0:
             return True
+    return False
 
 def move(board, fro, to):
     fig = board[fro[0], fro[1]]
@@ -235,10 +236,10 @@ def dbg_print_all_moves(board):
     for i in xrange(8):
         print ''
 
-def dbg_do_all_moves():
+def dbg_do_all_moves(board):
     for i in xrange(8):
         for j in xrange(8):
-            b = build_board()
+            b = np.copy(board)
             fro = [i, j]
             fig = b[i, j, 0]
             col = b[i, j, 1]
@@ -248,8 +249,8 @@ def dbg_do_all_moves():
                 for l in xrange(8):
                     to = [k, l]
                     if move(b, fro, to)[0]:
-                        print_board(b)
-                        b = build_board()
+                        print_highlight_move(b, fro, to)
+                        b = np.copy(board)
                         print '[11F'
                         raw_input()
     for i in xrange(8):
