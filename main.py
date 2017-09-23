@@ -103,8 +103,11 @@ def obstructed(board, fro, to):
             return True
     return False
 
-def move(board, fro, to):
+def move(board, fro, to, player):
     fig = board[fro[0], fro[1]]
+    if fig[1] != player:
+        return False, False
+
     fig_at = board[to[0], to[1]]
     occupied = fig_at[0] != 0
     if fig[1] == fig_at[1]:
@@ -165,7 +168,7 @@ def main():
             suc = False
             while not suc:
                 fro, to = np.random.randint(8, size=[2,2])
-                suc, check = move(board, fro, to)
+                suc, check = move(board, fro, to, player)
 
             print_highlight_move(board, fro, to)
             
@@ -254,7 +257,7 @@ def dbg_do_all_moves(board):
             for k in xrange(8):
                 for l in xrange(8):
                     to = [k, l]
-                    if move(b, fro, to)[0]:
+                    if move(b, fro, to, 1)[0]:
                         print_highlight_move(b, fro, to)
                         b = np.copy(board)
                         raw_input()
@@ -291,7 +294,7 @@ def dbg_move_random():
             counter = 0
         if fig == 0:
             continue
-        if move(b, fro, to)[0]:
+        if move(b, fro, to, 1)[0]:
             #print_board(b)
             print_highlight_move(b, fro, to)
             print '[H'
