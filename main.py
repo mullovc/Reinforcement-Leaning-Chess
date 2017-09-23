@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import numpy as np
 
@@ -127,14 +128,14 @@ def move(board, fro, to):
 
 def print_board(board):
     fig_chars = {
-            0 : ' ',
-            1 : 'B',
-            2 : 'T',
-            3 : 'S',
-            4 : 'L',
-            5 : 'Q',
-            6 : 'K',
-            7 : '@'
+            0 : u' ',
+            1 : u'♟',
+            2 : u'♜',
+            3 : u'♞',
+            4 : u'♝',
+            5 : u'♛',
+            6 : u'♚',
+            7 : u'@'
             }
 
     colors = {
@@ -155,8 +156,8 @@ def print_board(board):
     print out
 
 def main():
+    print "[H[J[?25l"
     board = build_board()
-    #dbg_move_random()
     won = 0
 
     while not won:
@@ -173,21 +174,26 @@ def main():
                 break
 
             inp = raw_input()
-            print '[11F'
+
+            if inp == 'm':
+                print '[H[J'
+                dbg_print_all_moves(board)
+                print '[H[J'
+            print '[H'
 
     print "Player " + str(won) + " has won!"
 
 
 def print_highlight_move(board, fro, to):
     fig_chars = {
-            0 : ' ',
-            1 : 'B',
-            2 : 'T',
-            3 : 'S',
-            4 : 'L',
-            5 : 'Q',
-            6 : 'K',
-            7 : '@'
+            0 : u' ',
+            1 : u'♟',
+            2 : u'♜',
+            3 : u'♞',
+            4 : u'♝',
+            5 : u'♛',
+            6 : u'♚',
+            7 : u'@'
             }
 
     colors = {
@@ -231,8 +237,8 @@ def dbg_print_all_moves(board):
                         b[k, l, 0] = 7
             #print_board(b)
             print_highlight_move(b, fro, fro)
-            print '[11F'
             raw_input()
+            print '[H'
     for i in xrange(8):
         print ''
 
@@ -251,8 +257,8 @@ def dbg_do_all_moves(board):
                     if move(b, fro, to)[0]:
                         print_highlight_move(b, fro, to)
                         b = np.copy(board)
-                        print '[11F'
                         raw_input()
+                        print '[H'
     for i in xrange(8):
         print ''
 
@@ -288,7 +294,7 @@ def dbg_move_random():
         if move(b, fro, to)[0]:
             #print_board(b)
             print_highlight_move(b, fro, to)
-            print '[11F'
+            print '[H'
             counter = 0
             inp = raw_input()
     for i in xrange(8):
