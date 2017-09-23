@@ -10,25 +10,6 @@ from dataSet import DataSet
 from regressor import Regressor
 
 
-def reward(board_flat, fro, to, player):
-    board = board_flat.reshape(8, 8, 2)
-
-    occ = board[to[0], to[1], 1] != 0
-    moved, check = chess.move(board, fro, to, player)
-    if check:
-        return 0
-    if moved:
-        return 30 - occ * 20
-
-    fig    = board[fro[0], fro[1]]
-    fig_at = board[to[0],  to[1]]
-    same = fig[1] == fig_at[1]
-
-    valid, beat = chess.validMove(chess.r_figures[fig[0]], fro, to, fig[1], occ)
-    obst = chess.obstructed(board, fro, to)
-
-    return 120 - valid * 50 - beat * 50 + obst * 50 + same * 50
-
 def calc_reward(log, won, rho):
     if won == 1:
         p1init_rew =  1
@@ -75,7 +56,7 @@ def norec_reward(init_rval, log, rho):
         elif suc:
             c_rval += 0.15
         else:
-            c_rval += valid*0.1 - same*0.3 + beat*0.15 - obst*0.2
+            c_rval += valid*0.1 + beat*0.15 - same*0.4 - obst*0.3 
         rew.append((i, c_rval))
     return rew
 
