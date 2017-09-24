@@ -27,7 +27,7 @@ def validMove(fig, fro, to, color, occupied):
 
     if fig == 'pawn':
         forward = 1
-        if color == 2:
+        if color == -1:
             forward = -1
         if to[0] == fro[0] + forward and abs(fro[1] - to[1]) == 1 and occupied:
             return True, True
@@ -67,8 +67,8 @@ def build_board():
         board[0, i, 1] = 1
         board[1, i, 1] = 1
         board[6, i, 0] = figures['pawn']
-        board[6, i, 1] = 2
-        board[7, i, 1] = 2
+        board[6, i, 1] = -1
+        board[7, i, 1] = -1
     board[0, 0, 0] = figures['rook']
     board[0, 7, 0] = figures['rook']
     board[7, 0, 0] = figures['rook']
@@ -142,12 +142,12 @@ def print_board(board):
             }
 
     colors = {
-            (0, 0) : "[40m",
-            (1, 0) : "[47m",
-            (0, 1) : "[39;40m",
-            (1, 1) : "[39;47m",
-            (0, 2) : "[35;40m",
-            (1, 2) : "[35;47m"
+            (0,  0) : "[40m",
+            (1,  0) : "[47m",
+            (0,  1) : "[39;40m",
+            (1,  1) : "[39;47m",
+            (0, -1) : "[35;40m",
+            (1, -1) : "[35;47m"
             }
 
     out = ''
@@ -164,7 +164,7 @@ def main():
     won = 0
 
     while not won:
-        for player in xrange(1, 3):
+        for player in [-1, 1]:
             suc = False
             while not suc:
                 fro, to = np.random.randint(8, size=[2,2])
@@ -200,24 +200,36 @@ def print_highlight_move(board, fro, to):
             }
 
     colors = {
-            (0, 0) : "[40m",
-            (1, 0) : "[47m",
-            (0, 1) : "[39;40m",
-            (1, 1) : "[39;47m",
-            (0, 2) : "[35;40m",
-            (1, 2) : "[35;47m",
-            (2, 0) : "[41m",
-            (2, 0) : "[41m",
-            (2, 1) : "[39;41m",
-            (2, 1) : "[39;41m",
-            (2, 2) : "[35;41m",
-            (2, 2) : "[35;41m"
+            (0,  0) : "[40m",
+            (1,  0) : "[47m",
+            (0,  1) : "[39;40m",
+            (1,  1) : "[39;47m",
+            (0, -1) : "[35;40m",
+            (1, -1) : "[35;47m",
+            (2,  0) : "[41m",
+            (2,  0) : "[41m",
+            (2,  1) : "[39;41m",
+            (2,  1) : "[39;41m",
+            (2, -1) : "[35;41m",
+            (2, -1) : "[35;41m",
+            (3,  0) : "[42m",
+            (3,  0) : "[42m",
+            (3,  1) : "[39;42m",
+            (3,  1) : "[39;42m",
+            (3, -1) : "[35;42m",
+            (3, -1) : "[35;42m"
             }
 
     out = ''
     for lidx, l in enumerate(board.transpose((1, 0, 2))):
         for fidx, f in enumerate(l):
-            f_col = 2 if (fro[0] == fidx and fro[1] == lidx) or (to[0] == fidx and to[1] == lidx) or f[0] == 7 else (lidx + fidx) % 2
+            if  fro[0] == fidx and fro[1] == lidx:
+                f_col = 3
+            elif to[0] == fidx and  to[1] == lidx or f[0] == 7:
+                f_col = 2
+            else:
+                f_col = (lidx + fidx) % 2
+
             out += colors[(f_col, int(f[1]))]
             out += fig_chars[f[0]]
         out += '[49m\n'
