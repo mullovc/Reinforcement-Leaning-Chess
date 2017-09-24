@@ -5,23 +5,23 @@ from itertools import product
 import numpy as np
 import tensorflow as tf
 
-import main as chess
+import chess
 from dataSet import DataSet
 from regressor import Regressor
 
 
 def calc_reward(log, won, rho):
-    if won == 1:
+    if   won ==  1:
         p1init_rew =  1
         p2init_rew = -1
-    if won == 2:
+    elif won == -1:
         p1init_rew = -1
         p2init_rew =  1
     elif won == 3:
         p1init_rew = -1
         p2init_rew = -1
-    p1log = [(i, x) for (i, x) in enumerate(log) if x[0] == 1]
-    p2log = [(i, x) for (i, x) in enumerate(log) if x[0] == 2]
+    p1log = [(i, x) for (i, x) in enumerate(log) if x[0] ==  1]
+    p2log = [(i, x) for (i, x) in enumerate(log) if x[0] == -1]
 
     p1rews = norec_reward(p1init_rew, p1log, rho)
     p2rews = norec_reward(p2init_rew, p2log, rho)
@@ -62,15 +62,16 @@ def norec_reward(init_rval, log, rho):
 
 def play(regr):
     board = chess.build_board()
-    board_flat = board.flatten()
+    board_flat = board.reshape((-1))
     won = 0
 
+    k = 8**3
     actions = []
     reward_log = []
     round_counter = 0
     while not won:
-        for p in xrange(1, 3):
-            (estim, aidx), inp = regr.k_best_actions(board_flat, p)
+        for p in [-1, 1]:
+            (estim, aidx), inp = regr.k_best_actions(board_flat, k, p)
             for i, a in zip(aidx.flatten(), estim.flatten()):
                 fro, to = regr.index_to_action(i)
                 suc, check = chess.move(board, fro, to, p)
@@ -87,7 +88,7 @@ def play(regr):
                 if suc:
                     break
             if not suc:
-                print "Couldn't find suitable move in top 8192 candidates"
+                print "Couldn't find suitable move in top " + str(k) + " candidates"
                 won = 3
             #chess.print_highlight_move(board, fro, to)
 
@@ -101,7 +102,7 @@ def play(regr):
 
     rewards = calc_reward(reward_log, won, 0.9)
 
-    if won == 1 or won == 2:
+    if won == 1 or won == -1:
         print "Player " + str(won) + " has won!"
     elif won == 3:
         print "Took to many rounds"
@@ -109,12 +110,42 @@ def play(regr):
     return actions, rewards, reward_log
 
 def print_state(state):
-    pass
+    board = state[:128].reshape(8,8,2)
+    #player = state[128]
+    f, t = np.argmax(state[130:].reshape((2, 64)), axis=1)
+    fro = (f / 8, f % 8)
+    to  = (t / 8, t % 8)
+    chess.print_highlight_move(board, fro, to)
+
+def train_with_transcript(regr):
+    f = np.load('data/transcript.npz')
+    transcript_states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
+    transcript_labels = f['rewards'].reshape(-1, 1)
+    for i in xrange(100):
+        e = regr.train_one_match(transcript_states, transcript_labels)
+        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(transcript_labels.shape[0])
+    regr.save('models/transcript_model.npz')
+
+def train_mixed(regr):
+    f = np.load('data/transcript.npz')
+    transcript_states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
+    transcript_labels = f['rewards'].reshape(-1, 1)
+    for i in xrange(20):
+        states, rew, logs = play(regr)
+        labels = np.array(rew).reshape(-1, 1)
+        st = np.concatenate([states, transcript_states])
+        lb = np.concatenate([labels, transcript_labels])
+        e = regr.train_one_match(st, lb)
+        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])
+
 
 if __name__ == '__main__':
-    regr = Regressor((32,), (tf.nn.tanh, tf.identity))
+    regr = Regressor((265,), (tf.nn.sigmoid, tf.identity))
 
-    for i in xrange(100):
+    train_with_transcript(regr)
+    exit()
+
+    for i in xrange(20):
         states, rew, logs = play(regr)
         labels = np.array(rew).reshape(-1, 1)
         e = regr.train_one_match(states, labels)
