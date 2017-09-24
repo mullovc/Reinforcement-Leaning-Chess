@@ -42,7 +42,7 @@ def norec_reward(init_rval, log, rho):
     rew = []
     rval = init_rval
 
-    for i, (p, suc, check, valid, occ, same, beat, obst) in log[::-1]:
+    for i, (p, suc, check, valid, own, occ, same, beat, obst) in log[::-1]:
         c_rval = rval
         if suc:
             rval = rval * rho
@@ -54,12 +54,14 @@ def norec_reward(init_rval, log, rho):
         elif suc:
             c_rval = 0.4
         else:
+            if not own:
+                c_rval *= 0.0
             if not valid:
-                c_rval *= 0.3
+                c_rval *= 0.2
             if not beat:
                 c_rval *= 0.8
             if same:
-                c_rval *= 0.3
+                c_rval *= 0.1
             if obst:
                 c_rval *= 0.4
         rew.append((i, c_rval))
@@ -84,11 +86,12 @@ def play(regr):
 
                 fig    = board[fro[0], fro[1]]
                 fig_at = board[to[0],  to[1]]
+                own = fig[1] == p
                 same = fig[1] == fig_at[1]
                 occ = board[to[0], to[1], 1] != 0
                 valid, beat = chess.validMove(chess.r_figures[fig[0]], fro, to, fig[1], occ)
                 obst = chess.obstructed(board, fro, to)
-                reward_log.append((p, suc, check, valid, occ, same, beat, obst))
+                reward_log.append((p, suc, check, valid, own, occ, same, beat, obst))
 
                 if suc:
                     break
