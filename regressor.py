@@ -8,21 +8,24 @@ class Regressor:
 
     def __init__(self, hidden_layers, activation_funcs):
         board_shape = (128,)
-        in_shape  = (board_shape[0] + 5,)
         out_shape = (1,)
+
+        one_act = np.identity(64)
+        self.actions = np.array(list(product(one_act, repeat=2))).reshape(-1, 128)
+
+        in_shape  = (board_shape[0] + 2 + self.actions.shape[1],)
         self.initialize_layers(in_shape + hidden_layers + out_shape, activation_funcs)
 
-
         # build generator graph, generating every possible action for a fed state and returning top-k
-        self.player = tf.placeholder(tf.float32, [1])
+        self.player = tf.placeholder(tf.float32, [2])
         self.state  = tf.placeholder(tf.float32, board_shape)
-        self.actions = np.array(list(product(xrange(8), repeat=4)))
         self.tiled_state  = tf.tile(tf.reshape(self.state,  (1, -1)), [len(self.actions), 1])
         self.tiled_player = tf.tile(tf.reshape(self.player, (1, -1)), [len(self.actions), 1])
         self.inputs = tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1)
 
         self.Qvals = self.get_feed_forward(self.inputs)
-        self.top_k = tf.Variable(8**3)
+        self.top_k = tf.placeholder(tf.int32, shape=[])
+        #self.top_k = tf.Variable(8**3)
         self.Qmax = tf.nn.top_k(tf.transpose(self.Qvals), k=self.top_k)
 
 
@@ -43,11 +46,26 @@ class Regressor:
         e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
         return e
 
-    def k_best_actions(self, board_flat, player):
-        return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.player : [player] })
+    #def train_with_transcript(self, boards, players, froms, tos, labels):
+    def gen_states(self, boards, players, froms, tos):
+        boards_flat = boards.reshape(-1, 128)
+        fro = np.zeros((froms.shape[0], 64))
+        to  = np.zeros((tos.shape[0],   64))
+        fro[np.arange(len(froms)), [(8*x+y) for x, y in froms]] = 1
+        to[np.arange(len(tos)),    [(8*x+y) for x, y in tos]]   = 1
+        pl = np.array([[1, 0] if p == 1 else [0, 1] for p in players])
+
+        return np.concatenate([boards_flat, pl, fro, to], axis=1)
+
+    def k_best_actions(self, board_flat, k, player):
+        p = [1, 0] if player == 1 else [0, 1]
+        return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
 
     def index_to_action(self, idx):
-        return self.actions[idx].reshape((2, 2))
+        f, t = np.argmax(self.actions[idx].reshape((2, 64)), axis=1)
+        fro = (f / 8, f % 8)
+        to  = (t / 8, t % 8)
+        return fro, to
 
     def initialize_layers(self, topology, activation_funcs):
         self.topology = topology
