@@ -65,7 +65,7 @@ def play(regr):
     board_flat = board.flatten()
     won = 0
 
-    actions_preds = []
+    actions = []
     reward_log = []
     round_counter = 0
     while not won:
@@ -74,7 +74,7 @@ def play(regr):
             for i, a in zip(aidx.flatten(), estim.flatten()):
                 fro, to = regr.index_to_action(i)
                 suc, check = chess.move(board, fro, to, p)
-                actions_preds.append(np.copy(inp[i]))
+                actions.append(np.copy(inp[i]))
 
                 fig    = board[fro[0], fro[1]]
                 fig_at = board[to[0],  to[1]]
@@ -99,20 +99,23 @@ def play(regr):
             if round_counter >= 100:
                 won = 3
 
-    rewards = calc_reward(reward_log, won, 0.99)
+    rewards = calc_reward(reward_log, won, 0.9)
 
     if won == 1 or won == 2:
         print "Player " + str(won) + " has won!"
     elif won == 3:
         print "Took to many rounds"
     
-    return actions_preds, rewards
+    return actions, rewards, reward_log
+
+def print_state(state):
+    pass
 
 if __name__ == '__main__':
-    regr = Regressor()
+    regr = Regressor((32,), (tf.nn.tanh, tf.identity))
 
-    for i in xrange(200):
-        states, rew = play(regr)
+    for i in xrange(100):
+        states, rew, logs = play(regr)
         labels = np.array(rew).reshape(-1, 1)
         e = regr.train_one_match(states, labels)
-        print "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])
+        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])

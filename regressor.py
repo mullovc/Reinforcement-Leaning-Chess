@@ -6,11 +6,11 @@ from mlp_layer import Layer
 
 class Regressor:
 
-    def __init__(self):
+    def __init__(self, hidden_layers, activation_funcs):
         board_shape = (128,)
         in_shape  = (board_shape[0] + 5,)
         out_shape = (1,)
-        self.initialize_layers(in_shape + (128,) + out_shape, [tf.nn.relu, tf.identity])
+        self.initialize_layers(in_shape + hidden_layers + out_shape, activation_funcs)
 
 
         # build generator graph, generating every possible action for a fed state and returning top-k
@@ -22,7 +22,7 @@ class Regressor:
         self.inputs = tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1)
 
         self.Qvals = self.get_feed_forward(self.inputs)
-        self.top_k = tf.Variable(8**4)
+        self.top_k = tf.Variable(8**3)
         self.Qmax = tf.nn.top_k(tf.transpose(self.Qvals), k=self.top_k)
 
 
