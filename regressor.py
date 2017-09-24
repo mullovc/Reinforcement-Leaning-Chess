@@ -124,17 +124,14 @@ class Regressor:
         return summed_accuracy / n_samples
 
     def save(self, fd):
-        weights = []
-        biases  = []
-        for l in self.layers:
+        params = {}
+        for i, l in enumerate(self.layers):
             W, b = self.sess.run([l.W, l.b])
-            weights.append(W)
-            biases.append(b.reshape((-1)))
-        np.savez(fd, W=weights, b=biases)
+            params['W' + str(i)] = W
+            params['b' + str(i)] = b
+        np.savez(fd, **params)
 
     def load(self, fd):
-        f = np.load(fd)
-        weights = f['W']
-        biases  = f['b']
-        for l, W, b in zip(self.layers, weights, biases):
-            self.sess.run([l.W.assign(W), l.b.assign(b.reshape((1,-1)))])
+        params = np.load(fd)
+        for i, l in enumerate(self.layers):
+            self.sess.run([l.W.assign(params['W' + str(i)]), l.b.assign(params['b' + str(i)])])
