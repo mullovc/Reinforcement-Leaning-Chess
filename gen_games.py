@@ -25,11 +25,12 @@ def play():
 
             fig    = board[fro[0], fro[1]]
             fig_at = board[to[0],  to[1]]
+            own = fig[1] == p
             same = fig[1] == fig_at[1]
             occ = board[to[0], to[1], 1] != 0
             valid, beat = chess.validMove(chess.r_figures[fig[0]], fro, to, fig[1], occ)
             obst = chess.obstructed(board, fro, to)
-            reward_log.append((p, suc, check, valid, occ, same, beat, obst))
+            reward_log.append((p, suc, check, valid, own, occ, same, beat, obst))
 
 
             if check:
@@ -40,7 +41,7 @@ def play():
             if round_counter >= 40:
                 won = 3
 
-    rewards = calc_reward(reward_log, won, 0.95)
+    rewards = calc_reward(reward_log, won, 0.98)
 
     if won == 1 or won == -1:
         print "Player " + str(won) + " has won!"
