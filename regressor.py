@@ -17,24 +17,26 @@ class Regressor:
         self.initialize_layers(in_shape + hidden_layers + out_shape, activation_funcs)
 
         # build generator graph, generating every possible action for a fed state and returning top-k
-        self.player = tf.placeholder(tf.float32, [2])
+        self.player = tf.placeholder(tf.float32, (2))
         self.state  = tf.placeholder(tf.float32, board_shape)
         self.tiled_state  = tf.tile(tf.reshape(self.state,  (1, -1)), [len(self.actions), 1])
         self.tiled_player = tf.tile(tf.reshape(self.player, (1, -1)), [len(self.actions), 1])
-        self.inputs = tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1)
+        self.inputs = tf.reshape(tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1), (1, len(self.actions), 258))
 
         self.Qvals = self.get_feed_forward(self.inputs)
         self.top_k = tf.placeholder(tf.int32, shape=[])
-        _, self.Qmax = tf.nn.top_k(tf.reshape(self.Qvals, [-1]), k=self.top_k)
-        self.k_best = tf.gather(self.inputs, self.Qmax)
+        #_, self.Qmax = tf.nn.top_k(tf.reshape(self.Qvals, [-1]), k=self.top_k)
+        #self.gather_idx = tf.concat([tf.reshape(tf.range(64), shape=[-1, 1]), tf.reshape(self.Qmax, shape=[-1, 1])], axis=1)
+        #self.k_best = tf.gather_nd(self.inputs, self.gather_idx)
 
 
         # build gradient descent graph, taking states and labels
-        self.x = tf.placeholder(tf.float32, shape=(None,) + in_shape)
-        self.t = tf.placeholder(tf.float32, (None, self.topology[-1]))
+        self.x = tf.placeholder(tf.float32, shape=(None, None) + in_shape)
+        self.t = tf.placeholder(tf.float32, (None, None, self.topology[-1]))
 
         self.o = self.get_feed_forward(self.x)
-        self.E = tf.reduce_mean(tf.square(self.t - self.o))
+        #self.E = tf.reduce_mean(tf.square(self.t - self.o))
+        self.E = tf.nn.softmax_cross_entropy_with_logits(logits=self.o, labels=self.t, dim=1)
         self.train_step = tf.train.AdamOptimizer().minimize(self.E)
 
         # initialize session
@@ -66,7 +68,8 @@ class Regressor:
 
     def k_best_actions(self, board_flat, k, player):
         p = [1, 0] if player == 1 else [0, 1]
-        return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
+        #return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
+        return self.sess.run(self.inputs, { self.state : board_flat, self.top_k : k, self.player : p }).reshape(-1, 258)
         #return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
 
     def index_to_action(self, idx):
@@ -86,14 +89,18 @@ class Regressor:
         in_n = self.topology[0]
         self.layers = []
         for out_n, f in zip(self.topology[1:], activation_funcs):
-            l = Layer(in_n, out_n, f)
-            self.layers.append(l)
+            W = tf.Variable(tf.random_normal((in_n, out_n), stddev=0.1, dtype=tf.float32, name='weight'))
+            b = tf.Variable(tf.random_normal((1, out_n), dtype=tf.float32, name='bias'))
+            self.layers.append((W, b, f))
             in_n = out_n
 
     def get_feed_forward(self, x):
         next_x = x
-        for l in self.layers:
-            next_x = l.get_feed_forward(next_x)
+        for W, b, f in self.layers:
+            # x.dim: batch_size x k x 258;   W.dim: 258x128;    y.dim: batch_size x k x 128
+            y = tf.tensordot(next_x, W, axes=[[2], [0]])
+            #y = tf.matmul(x, self.W) + self.b
+            next_x = f(y)
         return next_x
 
 
