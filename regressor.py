@@ -47,10 +47,10 @@ class Regressor:
         return e
 
     def train_with_data(self, data_set):
-		errs = []
-		for states, labels in data_set:
-			e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
-			errs.append[e]
+        errs = []
+        for states, labels in data_set:
+            e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
+            errs.append[e]
         return errs
 
     #def train_with_transcript(self, boards, players, froms, tos, labels):
