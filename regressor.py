@@ -46,6 +46,13 @@ class Regressor:
         e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
         return e
 
+    def train_with_data(self, data_set):
+		errs = []
+		for states, labels in data_set:
+			e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
+			errs.append[e]
+        return errs
+
     #def train_with_transcript(self, boards, players, froms, tos, labels):
     def gen_states(self, boards, players, froms, tos):
         boards_flat = boards.reshape(-1, 128)
