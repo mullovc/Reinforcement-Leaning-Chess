@@ -11,13 +11,13 @@ from regressor import Regressor
 def calc_reward(log, won, rho):
     if   won ==  1:
         p1init_rew = 1
-        p2init_rew = 0.3
+        p2init_rew = 0.6
     elif won == -1:
-        p1init_rew = 0.3
+        p1init_rew = 0.6
         p2init_rew = 1
     elif won == 3:
-        p1init_rew = 0.3
-        p2init_rew = 0.3
+        p1init_rew = 0.6
+        p2init_rew = 0.6
     p1log = [(i, x) for (i, x) in enumerate(log) if x[0] ==  1]
     p2log = [(i, x) for (i, x) in enumerate(log) if x[0] == -1]
 
@@ -38,31 +38,31 @@ def calc_reward(log, won, rho):
 
 def norec_reward(init_rval, log, rho):
     rew = []
-    rval = init_rval
+    rval_mult = init_rval
 
     for i, (p, suc, check, valid, own, occ, same, beat, obst) in log[::-1]:
-        c_rval = rval
+        c_rval = 1
         if suc:
-            rval = rval * rho
+            rval_mult *= rho
 
         if check:
             c_rval = 1
         elif suc and occ:
-            c_rval = 0.6
+            c_rval = 0.8
         elif suc:
-            c_rval = 0.4
+            c_rval = 0.7
         else:
             if not own:
                 c_rval *= 0.0
             if not valid:
-                c_rval *= 0.2
+                c_rval *= 0.1
             if not beat:
-                c_rval *= 0.8
+                c_rval *= 0.9
             if same:
                 c_rval *= 0.1
             if obst:
-                c_rval *= 0.4
-        rew.append((i, c_rval))
+                c_rval *= 0.5
+        rew.append((i, c_rval * rval_mult))
     return rew
 
 def play(regr):
@@ -108,7 +108,7 @@ def play(regr):
             if round_counter >= 100:
                 won = 3
 
-    rewards = calc_reward(reward_log, won, 0.9)
+    rewards = calc_reward(reward_log, won, 0.98)
 
     if won == 1 or won == -1:
         print "Player " + str(won) + " has won!"
