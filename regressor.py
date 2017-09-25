@@ -25,8 +25,8 @@ class Regressor:
 
         self.Qvals = self.get_feed_forward(self.inputs)
         self.top_k = tf.placeholder(tf.int32, shape=[])
-        #self.top_k = tf.Variable(8**3)
-        self.Qmax = tf.nn.top_k(tf.transpose(self.Qvals), k=self.top_k)
+        _, self.Qmax = tf.nn.top_k(tf.reshape(self.Qvals, [-1]), k=self.top_k)
+        self.k_best = tf.gather(self.inputs, self.Qmax)
 
 
         # build gradient descent graph, taking states and labels
@@ -59,10 +59,17 @@ class Regressor:
 
     def k_best_actions(self, board_flat, k, player):
         p = [1, 0] if player == 1 else [0, 1]
-        return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
+        return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
+        #return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
 
     def index_to_action(self, idx):
         f, t = np.argmax(self.actions[idx].reshape((2, 64)), axis=1)
+        fro = (f / 8, f % 8)
+        to  = (t / 8, t % 8)
+        return fro, to
+
+    def input_to_action(self, inp):
+        f, t = np.argmax(inp[130:].reshape((2, 64)), axis=1)
         fro = (f / 8, f % 8)
         to  = (t / 8, t % 8)
         return fro, to

@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 from itertools import product
 
 import numpy as np
@@ -77,12 +75,14 @@ def play(regr):
     reward_log = []
     round_counter = 0
     while not won:
-        for p in [-1, 1]:
-            (estim, aidx), inp = regr.k_best_actions(board_flat, k, p)
-            for i, a in zip(aidx.flatten(), estim.flatten()):
-                fro, to = regr.index_to_action(i)
+        for p in [1, -1]:
+            #aidx, inp = regr.k_best_actions(board_flat, k, p)
+            inp = regr.k_best_actions(board_flat, k, p)
+            print inp.shape
+            for i in inp:
+                fro, to = regr.input_to_action(i)
                 suc, check = chess.move(board, fro, to, p)
-                actions.append(np.copy(inp[i]))
+                actions.append(np.copy(i))
 
                 fig    = board[fro[0], fro[1]]
                 fig_at = board[to[0],  to[1]]
@@ -116,49 +116,3 @@ def play(regr):
         print "Took to many rounds"
     
     return actions, rewards, reward_log
-
-def print_state(state):
-    board = state[:128].reshape(8,8,2)
-    player = 'black' if all(state[128:130] == [1, 0]) else 'white'
-    
-    f, t = np.argmax(state[130:].reshape((2, 64)), axis=1)
-    fro = (f / 8, f % 8)
-    to  = (t / 8, t % 8)
-    print player
-    chess.print_highlight_move(board, fro, to)
-
-def train_with_transcript(regr):
-    f = np.load('data/transcript.npz')
-    transcript_states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
-    transcript_labels = f['rewards'].reshape(-1, 1)
-    for i in xrange(10):
-        e = regr.train_one_match(transcript_states, transcript_labels)
-        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(transcript_labels.shape[0])
-    #regr.save('models/transcript_model.npz')
-
-def train_mixed(regr):
-    f = np.load('data/transcript.npz')
-    transcript_states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
-    transcript_labels = f['rewards'].reshape(-1, 1)
-    for i in xrange(100):
-        states, rew, logs = play(regr)
-        labels = np.array(rew).reshape(-1, 1)
-        st = np.concatenate([states, transcript_states])
-        lb = np.concatenate([labels, transcript_labels])
-        e = regr.train_one_match(st, lb)
-        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])
-
-
-if __name__ == '__main__':
-    regr = Regressor((258,128), (tf.nn.tanh, tf.nn.sigmoid))
-
-    train_mixed(regr)
-    regr.save('models/2hl_mixed_tr.npz')
-    
-    #for _ in xrange(5):
-    #    train_with_transcript(regr)
-    #    for i in xrange(10):
-    #        states, rew, logs = play(regr)
-    #        labels = np.array(rew).reshape(-1, 1)
-    #        e = regr.train_one_match(states, labels)
-    #        print "Match " + str(i) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])
