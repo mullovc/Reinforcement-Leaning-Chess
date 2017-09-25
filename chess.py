@@ -164,7 +164,7 @@ def main():
     won = 0
 
     while not won:
-        for player in [-1, 1]:
+        for player in [1, -1]:
             suc = False
             while not suc:
                 fro, to = np.random.randint(8, size=[2,2])

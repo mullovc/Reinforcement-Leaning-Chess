@@ -14,7 +14,7 @@ def play():
     reward_log = []
     round_counter = 0
     while not won:
-        for p in [-1, 1]:
+        for p in [1, -1]:
             fro_cands = [(fx, fy) for (fx, fy) in product(xrange(8), repeat=2) if board[fx, fy, 1] == p]
             suc = False
             while not suc:
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     for x in xrange(10000):
         print "Round " + str(x)
         w, a, r, l = play()
-        if w in [-1, 1]:
+        if w in [1, -1]:
             valid_games  += 1
             valid_rounds += len(r)
             boards  += [b for b, _, _, _ in a]
