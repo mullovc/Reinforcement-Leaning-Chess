@@ -103,6 +103,27 @@ def obstructed(board, fro, to):
             return True
     return False
 
+def move_possible(board, fro, to, player):
+    fig = board[fro[0], fro[1]]
+    if fig[1] != player:
+        return False, False
+
+    fig_at = board[to[0], to[1]]
+    occupied = fig_at[0] != 0
+    if fig[1] == fig_at[1]:
+        return False, False
+    valid, beat = validMove(r_figures[fig[0]], fro, to, fig[1], occupied)
+
+    if not valid or (occupied and not beat):
+        return False, False
+    if obstructed(board, fro, to):
+        return False, False
+
+    if fig_at[0] == figures['king']:
+        return True, True
+
+    return True, False
+
 def move(board, fro, to, player):
     fig = board[fro[0], fro[1]]
     if fig[1] != player:
