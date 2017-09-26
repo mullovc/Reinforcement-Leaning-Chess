@@ -10,7 +10,7 @@ from regressor import Regressor
 
 def play(regr):
     board = chess.build_board()
-    board_flat = board.reshape((-1))
+    board_flat = board.reshape((1, -1))
     won = 0
 
     k = 8**2

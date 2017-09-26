@@ -11,17 +11,28 @@ class Regressor:
         out_shape = (1,)
 
         one_act = np.identity(64)
-        self.actions = np.array(list(product(one_act, repeat=2))).reshape(-1, 128)
+        self.actions = np.array(list(product(one_act, repeat=2)), dtype=np.float32).reshape(-1, 128)
 
         in_shape  = (board_shape[0] + 2 + self.actions.shape[1],)
         self.initialize_layers(in_shape + hidden_layers + out_shape, activation_funcs)
 
         # build generator graph, generating every possible action for a fed state and returning top-k
-        self.player = tf.placeholder(tf.float32, (2))
-        self.state  = tf.placeholder(tf.float32, board_shape)
-        self.tiled_state  = tf.tile(tf.reshape(self.state,  (1, -1)), [len(self.actions), 1])
-        self.tiled_player = tf.tile(tf.reshape(self.player, (1, -1)), [len(self.actions), 1])
-        self.inputs = tf.reshape(tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1), (1, len(self.actions), 258))
+        tile_n = self.actions.shape[0]
+        print tile_n
+        self.player = tf.placeholder(tf.float32, (None, 2))
+        self.state  = tf.placeholder(tf.float32, (None,) + board_shape)
+        # tile actions according to batch size
+        #self.tiled_actions = tf.tile(np.expand_dims(self.actions, 0), [tf.shape(None), 1, 1])
+        self.tiled_actions = tf.tile(np.expand_dims(self.actions, 0), [tf.shape(self.state)[0], 1, 1])
+        #self.tiled_actions = np.expand_dims(self.actions, 0)
+        self.tiled_state   = tf.tile(tf.expand_dims(self.state,  1), [1, tile_n, 1])
+        self.tiled_player  = tf.tile(tf.expand_dims(self.player, 1), [1, tile_n, 1])
+        self.inputs = tf.concat([self.tiled_state, self.tiled_player, self.tiled_actions], axis=2)
+        #self.player = tf.placeholder(tf.float32, (2))
+        #self.state  = tf.placeholder(tf.float32, board_shape)
+        #self.tiled_state  = tf.tile(tf.reshape(self.state,  (1, -1)), [len(self.actions), 1])
+        #self.tiled_player = tf.tile(tf.reshape(self.player, (1, -1)), [len(self.actions), 1])
+        #self.inputs = tf.reshape(tf.concat([self.tiled_state, self.tiled_player, self.actions], axis=1), (1, len(self.actions), 258))
 
         self.Qvals = self.get_feed_forward(self.inputs)
         self.top_k = tf.placeholder(tf.int32, shape=[])
@@ -35,9 +46,12 @@ class Regressor:
         self.t = tf.placeholder(tf.float32, (None, None, self.topology[-1]))
 
         self.o = self.get_feed_forward(self.x)
-        #self.E = tf.reduce_mean(tf.square(self.t - self.o))
         self.E = tf.nn.softmax_cross_entropy_with_logits(logits=self.o, labels=self.t, dim=1)
         self.train_step = tf.train.AdamOptimizer().minimize(self.E)
+
+
+        self.E_inputs = tf.nn.softmax_cross_entropy_with_logits(logits=self.Qvals, labels=self.t, dim=1)
+        self.train_step_inputs = tf.train.AdamOptimizer().minimize(self.E_inputs)
 
         # initialize session
         self.init = tf.global_variables_initializer()
@@ -46,6 +60,10 @@ class Regressor:
 
     def train_one_match(self, states, labels):
         e, _ = self.sess.run([self.E, self.train_step], {self.x : states, self.t : labels})
+        return e
+
+    def train_one_match_inputs(self, board, player, labels):
+        e, _ = self.sess.run([self.E_inputs, self.train_step_inputs], { self.player : player, self.state : board, self.t : labels })
         return e
 
     def train_with_data(self, data_set):
@@ -64,10 +82,12 @@ class Regressor:
         to[np.arange(len(tos)),    [(8*x+y) for x, y in tos]]   = 1
         pl = np.array([[1, 0] if p == 1 else [0, 1] for p in players])
 
+        #return np.expand_dims(np.concatenate([boards_flat, pl, fro, to], axis=1), axis=0)
         return np.concatenate([boards_flat, pl, fro, to], axis=1)
 
     def k_best_actions(self, board_flat, k, player):
         p = [1, 0] if player == 1 else [0, 1]
+        p = np.array(p).reshape([1, 2])
         #return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
         kb, inp = self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
         return kb.reshape([-1]), inp.reshape((-1, 258))

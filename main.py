@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from learn_chess import *
-from dataSet import DataSet
 from reward import calc_reward
 
 def print_state(state):
@@ -15,13 +14,14 @@ def print_state(state):
     chess.print_highlight_move(board, fro, to)
 
 def train_with_transcript(regr):
-    transcript = load_transcript('data/transcript.npz', 10000)
+    transcript = load_transcript('data/transcript.npz', 100)
     for i in xrange(10):
-        e = regr.train_with_data(transcript)
-        print "Match " + str(i) + ":\n" + "Errors: " +  str(e)
+        for s, p, l in transcript:
+            e = regr.train_one_match_inputs(s, p, l)
+            print "Match " + str(i) + ":\n" + "Errors: " +  str(e)
 
 def train_mixed(regr):
-    transcript = load_transcript('data/transcript.npz', 10000)
+    transcript = load_transcript('data/transcript.npz', 100)
     for i, (transcript_states, transcript_labels) in enumerate(transcript):
         states, rew, logs = play(regr)
         labels = np.array(rew).reshape(-1, 1)
@@ -32,13 +32,22 @@ def train_mixed(regr):
 
 def load_transcript(path, batch_size):
     f = np.load('data/transcript.npz')
-    states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
-    labels = f['rewards'].reshape(-1, 1)
-    transcript = DataSet(states, labels, 258, 1, batch_size)
-    return transcript
+    #states = regr.gen_states(f['boards'], f['players'], f['froms'], f['tos'])
+    states = f['boards']
+    player = np.array([[1, 0] if p == 1 else [0, 1] for p in f['players']])
+    labels = f['rewards'].reshape(-1, 4096, 1)
+    #transcript = DataSet(states, labels, 258, 1, batch_size)
+    trimmed_states = states[:len(states) - (len(states) % batch_size)]
+    trimmed_player = player[:len(player) - (len(player) % batch_size)]
+    trimmed_labels = labels[:len(labels) - (len(labels) % batch_size)]
+    batched_states = trimmed_states.reshape([-1, batch_size, 128])
+    batched_player = trimmed_player.reshape([-1, batch_size,   2])
+    batched_labels = trimmed_labels.reshape([-1, batch_size, 4096,   1])
+    return zip(batched_states, batched_player, batched_labels)
 
 if __name__ == '__main__':
-    regr = Regressor((520,260), (tf.nn.relu, tf.nn.relu, tf.identity))
+    regr = Regressor((258, 128), (tf.nn.relu, tf.nn.relu, tf.identity))
+    train_with_transcript(regr)
 
     for i in xrange(10):
         for j in xrange(10):
