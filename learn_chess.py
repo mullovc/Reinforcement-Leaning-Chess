@@ -79,15 +79,12 @@ def play(regr):
     round_counter = 0
     while not won:
         for p in [1, -1]:
-            inp = regr.k_best_actions(board_flat, k, p)
+            top_k, inp = regr.k_best_actions(board_flat, k, p)
             actions.append(np.copy(inp))
             round_log = []
-            moved = False
             for i in inp:
                 fro, to = regr.input_to_action(i)
                 suc, check = chess.move_possible(board, fro, to, p)
-                if not moved:
-                    moved, _ = chess.move(board, fro, to, p)
 
                 fig    = board[fro[0], fro[1]]
                 fig_at = board[to[0],  to[1]]
@@ -98,6 +95,13 @@ def play(regr):
                 obst = chess.obstructed(board, fro, to)
                 round_log.append((suc, check, valid, own, occ, same, beat, obst))
             reward_log.append((p, round_log))
+
+            moved = False
+            for i in top_k:
+                fro, to = regr.input_to_action(i)
+                moved, _ = chess.move(board, fro, to, p)
+                if moved:
+                    break
 
             if not moved:
                 print "Couldn't find suitable move in top " + str(k) + " candidates"

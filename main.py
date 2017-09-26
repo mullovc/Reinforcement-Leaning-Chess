@@ -37,13 +37,13 @@ def load_transcript(path, batch_size):
     return transcript
 
 if __name__ == '__main__':
-    regr = Regressor((258,128), (tf.nn.tanh, tf.nn.tanh, tf.nn.sigmoid))
+    regr = Regressor((520,260), (tf.nn.relu, tf.nn.relu, tf.identity))
 
     for i in xrange(10):
-        for j in xrange(500):
+        for j in xrange(10):
             states, rew, logs = play(regr)
-            labels = np.array(rew).reshape(-1, 1).astype(np.float32)
+            labels = np.array(rew).reshape(-1, 4096, 1).astype(np.float32)
             state_batch = np.array(states).astype(np.float32)
             e = regr.train_one_match(state_batch, labels)
-            print "Match " + str(500*i+j) + ":\n" + "Error: " +  str(e) + "\tinstances in last match: " + str(labels.shape[0])
-        regr.save('models/2hl_mixed_tr.e' + str(i) + '.npz')
+            print "Match " + str(500*i+j) + ":\n" + "Error: " +  str(e.mean()) + "\tinstances in last match: " + str(labels.shape[0])
+        regr.save('models/2hl_cross_entropy.e' + str(i) + '.npz')

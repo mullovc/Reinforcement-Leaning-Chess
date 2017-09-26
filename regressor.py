@@ -25,7 +25,7 @@ class Regressor:
 
         self.Qvals = self.get_feed_forward(self.inputs)
         self.top_k = tf.placeholder(tf.int32, shape=[])
-        #_, self.Qmax = tf.nn.top_k(tf.reshape(self.Qvals, [-1]), k=self.top_k)
+        _, self.Qmax = tf.nn.top_k(tf.transpose(self.Qvals, [0, 2, 1]), k=self.top_k)
         #self.gather_idx = tf.concat([tf.reshape(tf.range(64), shape=[-1, 1]), tf.reshape(self.Qmax, shape=[-1, 1])], axis=1)
         #self.k_best = tf.gather_nd(self.inputs, self.gather_idx)
 
@@ -69,7 +69,9 @@ class Regressor:
     def k_best_actions(self, board_flat, k, player):
         p = [1, 0] if player == 1 else [0, 1]
         #return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
-        return self.sess.run(self.inputs, { self.state : board_flat, self.top_k : k, self.player : p }).reshape(-1, 258)
+        kb, inp = self.sess.run([self.top_k, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
+        print self.Qvals.shape
+        return kb, inp.reshape((-1, 258))
         #return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
 
     def index_to_action(self, idx):
@@ -98,7 +100,7 @@ class Regressor:
         next_x = x
         for W, b, f in self.layers:
             # x.dim: batch_size x k x 258;   W.dim: 258x128;    y.dim: batch_size x k x 128
-            y = tf.tensordot(next_x, W, axes=[[2], [0]])
+            y = tf.tensordot(next_x, W, axes=[[2], [0]]) + b
             #y = tf.matmul(x, self.W) + self.b
             next_x = f(y)
         return next_x
@@ -146,13 +148,13 @@ class Regressor:
 
     def save(self, fd):
         params = {}
-        for i, l in enumerate(self.layers):
-            W, b = self.sess.run([l.W, l.b])
+        for i, (Wg, bg, _) in enumerate(self.layers):
+            W, b = self.sess.run([Wg, bg])
             params['W' + str(i)] = W
             params['b' + str(i)] = b
         np.savez(fd, **params)
 
     def load(self, fd):
         params = np.load(fd)
-        for i, l in enumerate(self.layers):
-            self.sess.run([l.W.assign(params['W' + str(i)]), l.b.assign(params['b' + str(i)])])
+        for i, (W, b, _) in enumerate(self.layers):
+            self.sess.run([W.assign(params['W' + str(i)]), b.assign(params['b' + str(i)])])
