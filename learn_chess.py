@@ -97,7 +97,8 @@ def play(regr):
             reward_log.append((p, round_log))
 
             moved = False
-            for i in top_k:
+            for idx in top_k:
+                i = inp[idx]
                 fro, to = regr.input_to_action(i)
                 moved, _ = chess.move(board, fro, to, p)
                 if moved:

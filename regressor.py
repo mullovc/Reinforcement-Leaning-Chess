@@ -69,9 +69,8 @@ class Regressor:
     def k_best_actions(self, board_flat, k, player):
         p = [1, 0] if player == 1 else [0, 1]
         #return self.sess.run(self.k_best, { self.state : board_flat, self.top_k : k, self.player : p })
-        kb, inp = self.sess.run([self.top_k, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
-        print self.Qvals.shape
-        return kb, inp.reshape((-1, 258))
+        kb, inp = self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
+        return kb.reshape([-1]), inp.reshape((-1, 258))
         #return self.sess.run([self.Qmax, self.inputs], { self.state : board_flat, self.top_k : k, self.player : p })
 
     def index_to_action(self, idx):
