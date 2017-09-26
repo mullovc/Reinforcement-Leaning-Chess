@@ -2,6 +2,7 @@
 
 from learn_chess import *
 from dataSet import DataSet
+from reward import calc_reward
 
 def print_state(state):
     board = state[:128].reshape(8,8,2)
@@ -41,9 +42,10 @@ if __name__ == '__main__':
 
     for i in xrange(10):
         for j in xrange(10):
-            states, rew, logs = play(regr)
-            labels = np.array(rew).reshape(-1, 4096, 1).astype(np.float32)
+            winner, states, logs = play(regr)
+            rewards = calc_reward(logs, winner, 0.96)
+            labels = regr.tensor_to_labels(rewards)
+            #labels = np.array(rew).reshape(-1, 4096, 1).astype(np.float32)
             state_batch = np.array(states).astype(np.float32)
             e = regr.train_one_match(state_batch, labels)
             print "Match " + str(500*i+j) + ":\n" + "Error: " +  str(e.mean()) + "\tinstances in last match: " + str(labels.shape[0])
-        regr.save('models/2hl_cross_entropy.e' + str(i) + '.npz')

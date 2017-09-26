@@ -85,6 +85,9 @@ class Regressor:
         to  = (t / 8, t % 8)
         return fro, to
 
+    def tensor_to_labels(self, rews):
+        return np.array(rews).reshape([-1, 4096, 1])
+
     def initialize_layers(self, topology, activation_funcs):
         self.topology = topology
         in_n = self.topology[0]
