@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import sys
 from itertools import product
 
 import chess
@@ -50,6 +51,11 @@ def main(players):
     while not won:
         for pidx, player in zip([1, -1], players):
             fro, to = player(board, pidx)
+
+            if to == None:
+                won = 1 if pidx == -1 else -1
+                break
+
             suc, check = chess.move(board, fro, to, pidx)
 
             if check:
@@ -59,5 +65,14 @@ def main(players):
     print 'White' if won == 1 else 'Black' + " has won!"
 
 if __name__ == '__main__':
-    main([get_input]*2)
+    opp_arg = sys.argv[1]
+    player = get_input
+    opponent = None
+    if   opp_arg == 'human':
+        opponent = get_input
+    elif opp_arg == 'nn':
+        from nn_opponent import NNOpponent
+        opponent = NNOpponent(sys.argv[2])
+    main([player, opponent])
+
     print "[?25h"

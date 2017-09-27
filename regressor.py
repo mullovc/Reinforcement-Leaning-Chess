@@ -18,7 +18,6 @@ class Regressor:
 
         # build generator graph, generating every possible action for a fed state and returning top-k
         tile_n = self.actions.shape[0]
-        print tile_n
         self.player = tf.placeholder(tf.float32, (None, 2))
         self.state  = tf.placeholder(tf.float32, (None,) + board_shape)
         # tile actions according to batch size
