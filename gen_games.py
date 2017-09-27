@@ -38,10 +38,7 @@ def play():
 
     rewards = None
     if won == 1 or won == -1:
-        print "Player " + str(won) + " has won!"
         rewards = calc_reward(actions, won, 0.96)
-    elif won == 3:
-        print "Took to many rounds"
     
     return won, actions, rewards, reward_log
 
@@ -62,7 +59,7 @@ def gen_transcripts(n):
     valid_games  = 0
     valid_rounds = 0
     for x in xrange(n):
-        print "Round " + str(x)
+        print "[FRound " + str(x)
         w, a, r, l = play()
         if w in [1, -1]:
             valid_games  += 1
@@ -79,4 +76,5 @@ def gen_transcripts(n):
     print "Total valid rounds:  " + str(valid_rounds)
 
 if __name__ == '__main__':
+    print ""
     gen_transcripts(int(sys.argv[1]))
