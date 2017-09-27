@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys
+import curses
 from itertools import product
 
 import chess
@@ -14,9 +15,9 @@ def get_input(board, player):
     to_select  =  to_cands.pop(0)
 
     while True:
+        print "[H"
         chess.print_highlight_move(board, fro_select, to_select, to_cands)
         inp = raw_input()
-        print "[H"
         if   inp == "j":
             fro_cands.append(fro_select)
             fro_select = fro_cands.pop(0)
@@ -35,6 +36,8 @@ def get_input(board, player):
             to_select = to_cands.pop()
         elif inp == "":
             return fro_select, to_select
+        elif inp == "q":
+            return None, None
 
 def get_dest_candidates(board, fro):
     player = board[fro[0], fro[1], 1]
@@ -62,7 +65,7 @@ def main(players):
                 won = pidx
                 break
 
-    print 'White' if won == 1 else 'Black' + " has won!"
+    print ('White' if won == 1 else 'Black') + " has won!"
 
 if __name__ == '__main__':
     opp_arg = sys.argv[1]
