@@ -150,35 +150,6 @@ def move(board, fro, to, player):
     return True, False
 
 
-def main():
-    print "[H[J[?25l"
-    board = build_board()
-    won = 0
-
-    while not won:
-        for player in [1, -1]:
-            suc = False
-            while not suc:
-                fro, to = np.random.randint(8, size=[2,2])
-                suc, check = move(board, fro, to, player)
-
-            print_highlight_move(board, fro, to)
-            
-            if check:
-                won = player
-                break
-
-            inp = raw_input()
-
-            if inp == 'm':
-                print '[H[J'
-                dbg_print_all_moves(board)
-                print '[H[J'
-            print '[H'
-
-    print "Player " + str(won) + " has won!"
-
-
 def print_highlight_move(board, fro, to, highlight=[]):
     fig_chars = {
             0 : u' ',
@@ -219,8 +190,8 @@ def print_highlight_move(board, fro, to, highlight=[]):
 
             out += bg_color[f_col] + fg_color[int(f[1])]
             out += fig_chars[f[0]]
-        out += '[49m\n'
-    print out + "[39m"
+        out += '[49m[E'
+    return out + "[39m"
     
 
 def dbg_print_all_moves(board):
@@ -238,7 +209,7 @@ def dbg_print_all_moves(board):
                     if validMove(r_figures[fig], fro, to, col, False)[0] and not obstructed(board, fro, to):
                         b[k, l, 0] = 7
             #print_board(b)
-            print_highlight_move(b, fro, fro)
+            print print_highlight_move(b, fro, fro)
             raw_input()
             print '[H'
     for i in xrange(8):
@@ -257,7 +228,7 @@ def dbg_do_all_moves(board):
                 for l in xrange(8):
                     to = [k, l]
                     if move(b, fro, to, 1)[0]:
-                        print_highlight_move(b, fro, to)
+                        print print_highlight_move(b, fro, to)
                         b = np.copy(board)
                         raw_input()
                         print '[H'
@@ -295,7 +266,7 @@ def dbg_move_random():
             continue
         if move(b, fro, to, 1)[0]:
             #print_board(b)
-            print_highlight_move(b, fro, to)
+            print print_highlight_move(b, fro, to)
             print '[H'
             counter = 0
             inp = raw_input()

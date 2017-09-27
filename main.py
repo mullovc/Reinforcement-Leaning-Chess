@@ -11,7 +11,7 @@ def print_state(state):
     fro = (f / 8, f % 8)
     to  = (t / 8, t % 8)
     print player
-    chess.print_highlight_move(board, fro, to)
+    print chess.print_highlight_move(board, fro, to)
 
 def train_with_transcript(regr):
     transcript = load_transcript('data/transcript.npz', 100)

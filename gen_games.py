@@ -45,7 +45,7 @@ def play():
 
 def print_transcript(actions):
     for b, fro, to, p in actions:
-        chess.print_highlight_move(b, fro, to)
+        print chess.print_highlight_move(b, fro, to)
         raw_input()
         print '[11F'
 
